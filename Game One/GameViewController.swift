@@ -10,12 +10,43 @@ import QuartzCore
 import SceneKit
 
 class GameViewController: UIViewController {
+    
+    var duration: TimeInterval = 5
+    var gameOver = false
+    var scene: SCNScene!
+    var ship: SCNNode!
+ 
+    
+    func spanShip() {
+        ship = SCNScene(named: "art.scnassets/ship.scn")!.rootNode.clone()
+        
+        scene.rootNode.addChildNode(ship)
+        
+        let x = Int.random(in: -25...25)
+        let y = Int.random(in: -25...25)
+        let z = -105
+        ship.position = SCNVector3(x, y, z)
+        
+        ship.look(at: SCNVector3(2 * x, 2 * y, 2 * z))
+        
+        ship.runAction(.move(to: SCNVector3(), duration: duration)) {
+            self.gameOver = true
+            self.removeShip()
+        }
+        duration *= 0.9
+    }
+    
+    func removeShip() {
+        scene.rootNode.childNode(withName: "ship", recursively: true)?.removeFromParentNode()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
+        scene = SCNScene(named: "art.scnassets/ship.scn")!
+        removeShip()
+        spanShip()
         
         // create and add a camera to the scene
         let cameraNode = SCNNode()
@@ -23,7 +54,7 @@ class GameViewController: UIViewController {
         scene.rootNode.addChildNode(cameraNode)
         
         // place the camera
-        cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
+        cameraNode.position = SCNVector3(x: 0, y: 0, z: 0)
         
         // create and add a light to the scene
         let lightNode = SCNNode()
@@ -40,10 +71,10 @@ class GameViewController: UIViewController {
         scene.rootNode.addChildNode(ambientLightNode)
         
         // retrieve the ship node
-        let ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
+//        let ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
         
         // animate the 3d object
-        ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
+//        ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
         
         // retrieve the SCNView
         let scnView = self.view as! SCNView
@@ -67,6 +98,7 @@ class GameViewController: UIViewController {
     
     @objc
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
+        if gameOver { return }
         // retrieve the SCNView
         let scnView = self.view as! SCNView
         
@@ -83,16 +115,13 @@ class GameViewController: UIViewController {
             
             // highlight it
             SCNTransaction.begin()
-            SCNTransaction.animationDuration = 0.5
+            SCNTransaction.animationDuration = 0.25
             
             // on completion - unhighlight
             SCNTransaction.completionBlock = {
-                SCNTransaction.begin()
-                SCNTransaction.animationDuration = 0.5
-                
-                material.emission.contents = UIColor.black
-                
-                SCNTransaction.commit()
+                self.ship.removeAllActions()
+                self.removeShip()
+                self.spanShip()
             }
             
             material.emission.contents = UIColor.red
