@@ -10,9 +10,25 @@ import QuartzCore
 import SceneKit
 
 class GameViewController: UIViewController {
+   
+    @IBOutlet var scnView: SCNView!
+    @IBOutlet var scoreLabel: UILabel!
     
+    var count = 0 {
+        didSet {
+            scoreLabel.text = "Очки: \(count)"
+        }
+    }
     var duration: TimeInterval = 5
-    var gameOver = false
+    var gameOver = false {
+        didSet {
+            DispatchQueue.main.async {
+                self.scoreLabel.numberOfLines = 2
+                self.scoreLabel.text = "Игра окончена \nочки: \(self.count)"
+            }
+    
+        }
+    }
     var scene: SCNScene!
     var ship: SCNNode!
  
@@ -42,6 +58,7 @@ class GameViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        count = 0
         
         // create a new scene
         scene = SCNScene(named: "art.scnassets/ship.scn")!
@@ -77,7 +94,7 @@ class GameViewController: UIViewController {
 //        ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
         
         // retrieve the SCNView
-        let scnView = self.view as! SCNView
+//        let scnView = self.view as! SCNView
         
         // set the scene to the view
         scnView.scene = scene
@@ -100,7 +117,7 @@ class GameViewController: UIViewController {
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
         if gameOver { return }
         // retrieve the SCNView
-        let scnView = self.view as! SCNView
+//        let scnView = self.view as! SCNView
         
         // check what nodes are tapped
         let p = gestureRecognize.location(in: scnView)
@@ -119,6 +136,7 @@ class GameViewController: UIViewController {
             
             // on completion - unhighlight
             SCNTransaction.completionBlock = {
+                self.count += 1
                 self.ship.removeAllActions()
                 self.removeShip()
                 self.spanShip()
